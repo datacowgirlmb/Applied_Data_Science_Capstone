@@ -55,20 +55,23 @@ app.layout = html.Div(children=[html.H1('SpaceX Launch Records Dashboard',
 # TASK 2:
 # Add a callback function for `site-dropdown` as input, `success-pie-chart` as output
 @app.callback(Output(component_id='success-pie-chart', component_property='figure'),
-    Input(component_id='site_dropdown', component_property='value'))
+    Input(component_id='site-dropdown', component_property='value'))
 
 def get_pie_chart(entered_site):
-    filtered_df = spacex_df.loc[spacex_df['Launch Site'] == entered_site]
-    totals_df = filtered_df.groupby(['Launch Site', 'class']).size().reset_index(name='class count')
-    title_pie = f"Total Successful Launches for {entered_site} Site"
+    #filtered_df = spacex_df.groupby(['Launch Site', 'class']).size().reset_index(name='class count')
+    filtered_df = spacex_df
+    title_pie = f"Total Successful Launches for {entered_site}"
+
     if entered_site == 'ALL':
-        fig = px.pie(totals_df,
+        fig = px.pie(filtered_df,
             values='class',
             names = 'Launch Site',
             title = title_pie)
     else:
+        filtered_df = spacex_df[spacex_df['Launch Site'] == entered_site]
+        totals_df = filtered_df.groupby(['Launch Site', 'class']).size().reset_index(name='class count')
         fig = px.pie(totals_df,
-            values = 'class',
+            values = 'class count',
             names='Launch Site',
             title = title_pie)
     return fig
@@ -80,12 +83,13 @@ def get_pie_chart(entered_site):
     [Input(component_id='site-dropdown', component_property='value'),
     Input(component_id='payload-slider', component_property='value')])
 
-def get_scatter_chart(entered_site, payload):
-    slider_min = payload[0]
-    slider_max = payload[1]
+def get_scatter_plot(entered_site, payload_range):
+    slider_min = payload_range[0]
+    slider_max = payload_range[1]
 
-    scatter_df = spacex_df.loc(spacex_df['Payload Mass (kg)'] >= slider_min and slider_df['Payload Mass (kg)'] <= payload_max)
-    title_scatter = f'Launches by Payload Mass (kg) for {entered_site}'
+    #scatter_df = spacex_df.loc(spacex_df['Payload Mass (kg)'] >= slider_min and slider_df['Payload Mass (kg)'] <= payload_max)
+    scatter_df = spacex_df[spacex_df['Payload Mass (kg)'].between(slider_min, slider_max)]
+    title_scatter = f'Payload Mass (kg) vs. Launch Success for {entered_site}'
     if entered_site == 'ALL':
         fig = px.scatter(scatter_df,
             x='Payload Mass (kg)',
@@ -93,7 +97,7 @@ def get_scatter_chart(entered_site, payload):
             color='Booster Version Category',
             title=title_scatter)
     else:
-        filtered_scatter_df = scatter_df.loc('Launch Site' == entered_site)
+        filtered_scatter_df = scatter_df[scatter_df['Launch Site'] == entered_site]
         fig = px.scatter(filtered_scatter_df,
             x='Payload Mass (kg)',
             y='class',
